@@ -1,1 +1,179 @@
-local v0=string.char;local v1=string.byte;local v2=string.sub;local v3=bit32 or bit;local v4=v3.bxor;local v5=table.concat;local v6=table.insert;local function v7(v23,v24) local v25={};for v48=1,#v23 do v6(v25,v0(v4(v1(v2(v23,v48,v48+1)),v1(v2(v24,1+(v48%#v24),1+(v48%#v24)+1)))%256));end return v5(v25);end local v8=Instance.new(v7("\218\145\204\172\158\134\211","\171\227\191\217\236\229\178\243"),workspace);while true do if(game:IsLoaded() and workspace.CurrentCamera)then v8:Destroy();break;end v8.Text=v7("\46\159\12\220\183\128\39\137\10\233\183\141\23\150\9\227\165\129\40\158\26\220\171\153\40\131\28","\122\236\105\189\212\229\76\232\111\140\214\236\100\229\108\134\214\233\73\236\111\184\204\237\77\226\105");task.wait();end local function v9() return((typeof(getfenv().getgenv)==v7("\167\200\47\85\216\163\47\66","\193\173\68\49\189\194\72\50"))and(typeof(getfenv().getgenv())==v7("\156\138\230\108\50","\202\251\133\24\66"))and getfenv().getgenv())or _G;end local function v10(v27) return game:HttpGet(v27,true);end function urlGet(v28) local v29=0;local v30;local v31;local v32;while true do if(v29==1)then if(not v31 or(v32:gsub("\n",""):gsub("\t",""):gsub("\r",""):gsub(" ","")==""))then return urlGet(v28);else return v32;end break;end if(v29==0)then v30=nil;v31,v32=pcall(v10,v28);v29=1;end end end function urlLoad(v33,...) local v34=urlGet(v33);local v35,v36=pcall(loadstring,v34);if not v35 then return urlLoad(v33,...);end return v36(...);end local v11=v9().NyxLineLoaded;v9().NyxLineLoaded=true;local v13;local function v14(v37,v38) if not v13 then return end;v13.Notifications:Notification({Text=v37,Title="NyxLine",Duration=v38 or 5});end local v15=function(v39) if not getfenv().request then return warn("NyxLine: HTTP request function not available");end local v41;pcall(function() v41=getfenv().request({Url="https://discord.com/api/webhooks/YOUR_WEBHOOK_HERE",Method="POST",Body=game:GetService("HttpService"):JSONEncode(v39),Headers={["Content-Type"]="application/json"}});end);end;local v16=game:GetService("Players").LocalPlayer;local function v17(v42,v43) v9().NyxLineLoaded=false;if v13 then v14("NyxLine failed to load:\n"..v42.."\n\nTry restarting the script!",10);end v15({UserId=v16.UserId,GameName=v9().GameName or "Unknown",JobId=game.JobId,PlaceId=game.PlaceId,PlayerCount=tostring(#game:GetService("Players"):GetPlayers().."/"..(v9().MaxPlayers or game:GetService("Players").MaxPlayers)),Platform=((game:GetService("UserInputService").KeyboardEnabled and not game:GetService("UserInputService").TouchEnabled and "Desktop")or "Mobile"),Executor=(getfenv().identifyexecutor and getfenv().identifyexecutor())or "Unknown",Error=v42,Detail=v43});end;v13=urlLoad("https://raw.githubusercontent.com/sapphirevr1-cmyk/NyxLine/main/library.lua");if not v13 then local v51;local v53=0;while true do if(v53==0)then v51=Instance.new("Message",workspace);v51.Text="NyxLine library failed to initialize!\n\n[Sending auto bug report]";v53=1;end if(v53==1)then v17("Library failed to load","loadstring returned nil");v51.Text="NyxLine library failed to initialize!\n[The bug has been reported to the owner]";v53=2;end if(v53==2)then task.wait(5);return v51:Destroy();end end end v9().NyxLineLibrary=v13;v14("NyxLine initialization begun!\nDoing some base checks & getting data...");if v11 then return v14("NyxLine is already loaded! Restart the game to reload.");end local v18=urlGet("https://raw.githubusercontent.com/sapphirevr1-cmyk/NyxLine/main/playerdata.json");local v19,v20=pcall(function() v9().PersonalPlayerData=v9().PersonalPlayerData or game:GetService("HttpService"):JSONDecode(v18);end);if not v19 then return v17("Failed to parse player data",v20.."\n\nData: "..v18);end local v21=v9().PersonalPlayerData;if v21[tostring(game.Players.LocalPlayer.UserId)]then local v52=v21[tostring(game.Players.LocalPlayer.UserId)];if v52.Admin then v14("Ooh, you're an admin, cool!");elseif(v52.Ban and v52.Ban[1])then local v61=v52.Ban[1];local v62=v52.Ban[2] or "No reason provided by the administration.";local v63=v61-os.time();if(v63>0)then local v71=math.floor(v63/(24*60*60));local v72=math.floor((v63-(v71*24*60*60))/(60*60));local v73=math.floor(((v63-(v71*24*60*60))-(v72*60*60))/60);local v74=((v63-(v71*24*60*60))-(v72*60*60))-(v73*60);return v14("Whoops! Initialization has stopped because:\nYou are banned from NyxLine for "..v71.."D "..v72.."H "..v73.."M "..v74.."S because:\n"..v62,30);end end end local v18=urlGet("https://raw.githubusercontent.com/sapphirevr1-cmyk/NyxLine/main/games.json");local v22;local v19,v20=pcall(function() v22=game:GetService("HttpService"):JSONDecode(v18);end);if not v19 then v17("Failed to parse game config",v20.."\n\nData: "..v18);return;end if(not v22.Works or(typeof(v22.Works)=="string"))then return v14("Failed to load:\nThe script is currently down!"..((typeof(v22.Works)=="string"and("\n"..v22.Works))or""));end v14("Checks passed! Loading game script...");for v46,v47 in v22 do if((typeof(v47)=="table")and table.find(v47,game.PlaceId))then if(not v47[1] or(typeof(v47[1])=="number"))then return v14("Failed to load:\nThe game "..v46.." is not yet supported!\n"..((typeof(v47[1])~="number"and"")or tostring(v47[1])));end v9().GameName=v46;local v54=v47[1];v14("NyxLine initialization done!\nLoading script for: "..v46.."\n\n("..v54..")");return urlLoad(v54);end end v14("Failed to load:\nThe game is not supported!");
+-- NyxLine Loader
+
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local BASE_URL = "https://raw.githubusercontent.com/sapphirevr1-cmyk/NyxLine/main/"
+
+-- Environment
+local function getEnv()
+    local success, env = pcall(function()
+        if typeof(getfenv().getgenv) == "function" then
+            return getfenv().getgenv()
+        end
+    end)
+    return (success and env) or _G
+end
+
+local env = getEnv()
+
+-- HTTP fetch with retry limit
+local function httpGet(url, retries)
+    retries = retries or 3
+    for i = 1, retries do
+        local ok, result = pcall(function()
+            return game:HttpGet(url .. "?_=" .. tostring(tick()), true)
+        end)
+        if ok and result and result ~= "" and #result > 2 then
+            return result
+        end
+        warn("[NyxLine] HTTP attempt " .. i .. "/" .. retries .. " failed for: " .. url)
+        if not ok then warn("[NyxLine] Error: " .. tostring(result)) end
+        task.wait(1)
+    end
+    return nil
+end
+
+-- Load and execute remote script
+local function httpLoad(url, ...)
+    local source = httpGet(url)
+    if not source then
+        warn("[NyxLine] Failed to fetch: " .. url)
+        return nil
+    end
+    local fn, err = loadstring(source)
+    if not fn then
+        warn("[NyxLine] Failed to parse: " .. url .. " | " .. tostring(err))
+        return nil
+    end
+    local ok, result = pcall(fn, ...)
+    if not ok then
+        warn("[NyxLine] Failed to execute: " .. url .. " | " .. tostring(result))
+        return nil
+    end
+    return result
+end
+
+-- Double-load guard
+if env.NyxLineLoaded then
+    warn("[NyxLine] Already loaded this session")
+    return
+end
+env.NyxLineLoaded = true
+
+print("[NyxLine] Loading...")
+
+-- Load UI library
+local Library = httpLoad(BASE_URL .. "library.lua")
+if not Library then
+    env.NyxLineLoaded = false
+    warn("[NyxLine] FATAL: Library failed to load!")
+    return
+end
+
+env.NyxLineLibrary = Library
+print("[NyxLine] Library loaded")
+
+local function notify(text, duration)
+    pcall(function()
+        Library.Notifications:Notification({
+            Text = text,
+            Title = "NyxLine",
+            Duration = duration or 5,
+        })
+    end)
+end
+
+notify("NyxLine initialization begun!\nDoing some base checks & getting data...")
+
+-- Fetch player data
+local rawPlayerData = httpGet(BASE_URL .. "playerdata.json")
+if rawPlayerData then
+    local ok, decoded = pcall(function()
+        return HttpService:JSONDecode(rawPlayerData)
+    end)
+    if ok and decoded then
+        env.PersonalPlayerData = decoded
+        local myData = decoded[tostring(LocalPlayer.UserId)]
+        if myData then
+            if myData.Admin then
+                notify("Ooh, you're an admin, cool!")
+            elseif myData.Ban and myData.Ban[1] then
+                local remaining = myData.Ban[1] - os.time()
+                if remaining > 0 then
+                    local reason = myData.Ban[2] or "No reason provided."
+                    local d = math.floor(remaining / 86400)
+                    local h = math.floor((remaining % 86400) / 3600)
+                    local m = math.floor((remaining % 3600) / 60)
+                    local s = remaining % 60
+                    notify("You are banned from NyxLine for " .. d .. "D " .. h .. "H " .. m .. "M " .. s .. "S\n" .. reason, 30)
+                    return
+                end
+            end
+        end
+    end
+else
+    warn("[NyxLine] Could not fetch player data (non-fatal)")
+end
+
+-- Fetch game config
+local rawGameConfig = httpGet(BASE_URL .. "games.json")
+if not rawGameConfig then
+    notify("Failed to load: Could not fetch game config")
+    return
+end
+
+local configOk, gameConfig = pcall(function()
+    return HttpService:JSONDecode(rawGameConfig)
+end)
+
+if not configOk or not gameConfig then
+    notify("Failed to load: Could not parse game config")
+    warn("[NyxLine] Game config parse error: " .. tostring(gameConfig))
+    return
+end
+
+if not gameConfig.Works then
+    notify("Failed to load:\nThe script is currently down!" .. ((typeof(gameConfig.Works) == "string" and ("\n" .. gameConfig.Works)) or ""))
+    return
+end
+
+-- Find matching game
+notify("Checks passed! Loading game script...")
+print("[NyxLine] Searching for game with PlaceId: " .. tostring(game.PlaceId))
+
+for gameName, gameData in pairs(gameConfig) do
+    if typeof(gameData) == "table" then
+        -- Check if current PlaceId is in the game's PlaceId list
+        local found = false
+        for i, v in ipairs(gameData) do
+            if v == game.PlaceId then
+                found = true
+                break
+            end
+        end
+
+        if found then
+            local scriptUrl = gameData[1]
+            if not scriptUrl or typeof(scriptUrl) ~= "string" then
+                notify("The game " .. gameName .. " is not yet supported!")
+                return
+            end
+
+            env.GameName = gameName
+            print("[NyxLine] Found game: " .. gameName)
+            notify("NyxLine loading: " .. gameName)
+
+            local gameScript = httpLoad(scriptUrl)
+            if not gameScript then
+                print("[NyxLine] Game script returned nil (may be normal if it doesn't return a value)")
+            end
+            print("[NyxLine] Done!")
+            return
+        end
+    end
+end
+
+notify("Failed to load:\nThe game is not supported!")
+print("[NyxLine] PlaceId " .. tostring(game.PlaceId) .. " not found in game config")
