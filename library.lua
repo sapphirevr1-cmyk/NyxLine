@@ -1,7 +1,6 @@
 --[[
     NyxLine UI Library
     Custom exploit hub UI framework
-    Draggable windows, tabs, toggles, sliders, dropdowns, keybinds, notifications
 ]]
 
 local NyxLine = {}
@@ -15,7 +14,6 @@ local RunService = game:GetService("RunService")
 local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
 
--- Theme
 local Theme = {
     Background = Color3.fromRGB(18, 18, 24),
     Surface = Color3.fromRGB(24, 24, 32),
@@ -36,7 +34,6 @@ local Theme = {
     TweenSpeed = 0.2,
 }
 
--- Utilities
 local function tween(obj, props, duration)
     local t = TweenService:Create(obj, TweenInfo.new(duration or Theme.TweenSpeed, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props)
     t:Play()
@@ -87,29 +84,41 @@ local function addPadding(parent, t, b, l, r)
 end
 
 ------------------------------------------------------------------------
--- Notification System
+-- ScreenGui (created immediately so notifications work before CreateWindow)
 ------------------------------------------------------------------------
 
-local NotificationHolder
+local ScreenGui = create("ScreenGui", {
+    Name = "NyxLine",
+    ResetOnSpawn = false,
+    ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+})
+
+if syn and syn.protect_gui then
+    syn.protect_gui(ScreenGui)
+end
+
+ScreenGui.Parent = (getfenv().gethui and getfenv().gethui()) or game:GetService("CoreGui")
+
+------------------------------------------------------------------------
+-- Notification System (auto-initialized)
+------------------------------------------------------------------------
+
+local NotificationHolder = create("Frame", {
+    Name = "Notifications",
+    Size = UDim2.new(0, 280, 1, 0),
+    Position = UDim2.new(1, -290, 0, 0),
+    BackgroundTransparency = 1,
+    Parent = ScreenGui,
+})
+create("UIListLayout", {
+    Padding = UDim.new(0, 6),
+    SortOrder = Enum.SortOrder.LayoutOrder,
+    VerticalAlignment = Enum.VerticalAlignment.Bottom,
+    Parent = NotificationHolder,
+})
+addPadding(NotificationHolder, 0, 10, 0, 0)
 
 local Notifications = {}
-
-function Notifications:Init(screenGui)
-    NotificationHolder = create("Frame", {
-        Name = "Notifications",
-        Size = UDim2.new(0, 280, 1, 0),
-        Position = UDim2.new(1, -290, 0, 0),
-        BackgroundTransparency = 1,
-        Parent = screenGui,
-    })
-    create("UIListLayout", {
-        Padding = UDim.new(0, 6),
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        VerticalAlignment = Enum.VerticalAlignment.Bottom,
-        Parent = NotificationHolder,
-    })
-    addPadding(NotificationHolder, 0, 10, 0, 0)
-end
 
 function Notifications:Notification(config)
     local title = config.Title or "NyxLine"
@@ -181,6 +190,8 @@ function Notifications:Notification(config)
     end)
 end
 
+NyxLine.Notifications = Notifications
+
 ------------------------------------------------------------------------
 -- Main Window
 ------------------------------------------------------------------------
@@ -190,40 +201,24 @@ function NyxLine:CreateWindow(config)
     local windowSize = config.Size or UDim2.new(0, 520, 0, 380)
     local toggleKey = config.ToggleKey or Enum.KeyCode.RightControl
 
-    local screenGui = create("ScreenGui", {
-        Name = "NyxLine",
-        ResetOnSpawn = false,
-        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-    })
-
-    if syn and syn.protect_gui then
-        syn.protect_gui(screenGui)
-    end
-
-    screenGui.Parent = (getfenv().gethui and getfenv().gethui()) or game:GetService("CoreGui")
-
-    Notifications:Init(screenGui)
-
     local window = {
-        Gui = screenGui,
+        Gui = ScreenGui,
         Tabs = {},
         ActiveTab = nil,
         Visible = true,
         Notifications = Notifications,
     }
 
-    -- Main frame
     local mainFrame = create("Frame", {
         Name = "Main",
         Size = windowSize,
         Position = UDim2.new(0.5, -windowSize.X.Offset / 2, 0.5, -windowSize.Y.Offset / 2),
         BackgroundColor3 = Theme.Background,
-        Parent = screenGui,
+        Parent = ScreenGui,
     })
     addCorner(mainFrame, UDim.new(0, 8))
     addStroke(mainFrame, Theme.Border, 1)
 
-    -- Shadow
     create("ImageLabel", {
         Name = "Shadow",
         Size = UDim2.new(1, 30, 1, 30),
@@ -238,7 +233,6 @@ function NyxLine:CreateWindow(config)
         Parent = mainFrame,
     })
 
-    -- Title bar
     local titleBar = create("Frame", {
         Name = "TitleBar",
         Size = UDim2.new(1, 0, 0, 36),
@@ -248,7 +242,6 @@ function NyxLine:CreateWindow(config)
     })
     addCorner(titleBar, UDim.new(0, 8))
 
-    -- Square off bottom corners of title bar
     create("Frame", {
         Size = UDim2.new(1, 0, 0, 10),
         Position = UDim2.new(0, 0, 1, -10),
@@ -257,7 +250,6 @@ function NyxLine:CreateWindow(config)
         Parent = titleBar,
     })
 
-    -- Title text
     create("TextLabel", {
         Name = "Title",
         Size = UDim2.new(0, 200, 1, 0),
@@ -271,7 +263,6 @@ function NyxLine:CreateWindow(config)
         Parent = titleBar,
     })
 
-    -- Minimize button
     local minimizeBtn = create("TextButton", {
         Name = "Minimize",
         Size = UDim2.new(0, 28, 0, 28),
@@ -285,7 +276,6 @@ function NyxLine:CreateWindow(config)
     })
     addCorner(minimizeBtn, UDim.new(0, 4))
 
-    -- Close button
     local closeBtn = create("TextButton", {
         Name = "Close",
         Size = UDim2.new(0, 28, 0, 28),
@@ -398,10 +388,6 @@ function NyxLine:CreateWindow(config)
         window.ActiveTab = tabName
     end
 
-    --------------------------------------------------------------------
-    -- Tab Creation
-    --------------------------------------------------------------------
-
     function window:CreateTab(config)
         local tabName = config.Name or "Tab"
         local tabIcon = config.Icon or ""
@@ -473,15 +459,10 @@ function NyxLine:CreateWindow(config)
 
         local tab = {}
 
-        ----------------------------------------------------------------
-        -- Section
-        ----------------------------------------------------------------
-
         function tab:CreateSection(name)
             local section = create("Frame", {
                 Name = "Section_" .. name,
-                Size = UDim2.new(1, 0, 0, 0),
-                AutomaticSize = Enum.AutomaticSize.Y,
+                Size = UDim2.new(1, 0, 0, 24),
                 BackgroundTransparency = 1,
                 Parent = tabContent,
             })
@@ -508,10 +489,6 @@ function NyxLine:CreateWindow(config)
 
             return section
         end
-
-        ----------------------------------------------------------------
-        -- Toggle
-        ----------------------------------------------------------------
 
         function tab:CreateToggle(config)
             local name = config.Name or "Toggle"
@@ -585,10 +562,6 @@ function NyxLine:CreateWindow(config)
             return toggleObj
         end
 
-        ----------------------------------------------------------------
-        -- Slider
-        ----------------------------------------------------------------
-
         function tab:CreateSlider(config)
             local name = config.Name or "Slider"
             local min = config.Min or 0
@@ -655,8 +628,8 @@ function NyxLine:CreateWindow(config)
                 Parent = holder,
             })
 
-            local function update(input)
-                local pos = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
+            local function update(inputX)
+                local pos = math.clamp((inputX - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
                 local rawVal = min + (max - min) * pos
                 value = math.floor(rawVal / increment + 0.5) * increment
                 value = math.clamp(value, min, max)
@@ -667,6 +640,7 @@ function NyxLine:CreateWindow(config)
 
             inputBtn.MouseButton1Down:Connect(function()
                 sliding = true
+                update(Mouse.X)
             end)
 
             UserInputService.InputEnded:Connect(function(input)
@@ -677,20 +651,8 @@ function NyxLine:CreateWindow(config)
 
             UserInputService.InputChanged:Connect(function(input)
                 if sliding and input.UserInputType == Enum.UserInputType.MouseMovement then
-                    update(input)
+                    update(input.Position.X)
                 end
-            end)
-
-            inputBtn.MouseButton1Click:Connect(function()
-                local input = {Position = Vector2.new(Mouse.X, Mouse.Y)}
-                input.Position = {X = Mouse.X}
-                local pos = math.clamp((Mouse.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
-                local rawVal = min + (max - min) * pos
-                value = math.floor(rawVal / increment + 0.5) * increment
-                value = math.clamp(value, min, max)
-                valueLabel.Text = tostring(value)
-                tween(sliderFill, {Size = UDim2.new((value - min) / (max - min), 0, 1, 0)}, 0.05)
-                callback(value)
             end)
 
             local sliderObj = {}
@@ -705,10 +667,6 @@ function NyxLine:CreateWindow(config)
             end
             return sliderObj
         end
-
-        ----------------------------------------------------------------
-        -- Dropdown
-        ----------------------------------------------------------------
 
         function tab:CreateDropdown(config)
             local name = config.Name or "Dropdown"
@@ -821,10 +779,6 @@ function NyxLine:CreateWindow(config)
             return dropObj
         end
 
-        ----------------------------------------------------------------
-        -- Button
-        ----------------------------------------------------------------
-
         function tab:CreateButton(config)
             local name = config.Name or "Button"
             local callback = config.Callback or function() end
@@ -858,10 +812,6 @@ function NyxLine:CreateWindow(config)
             btn.MouseButton1Click:Connect(callback)
         end
 
-        ----------------------------------------------------------------
-        -- Label
-        ----------------------------------------------------------------
-
         function tab:CreateLabel(text)
             local label = create("TextLabel", {
                 Size = UDim2.new(1, 0, 0, 20),
@@ -880,10 +830,6 @@ function NyxLine:CreateWindow(config)
             end
             return labelObj
         end
-
-        ----------------------------------------------------------------
-        -- Keybind
-        ----------------------------------------------------------------
 
         function tab:CreateKeybind(config)
             local name = config.Name or "Keybind"
@@ -951,10 +897,6 @@ function NyxLine:CreateWindow(config)
             end
             return bindObj
         end
-
-        ----------------------------------------------------------------
-        -- TextBox
-        ----------------------------------------------------------------
 
         function tab:CreateTextBox(config)
             local name = config.Name or "Input"
