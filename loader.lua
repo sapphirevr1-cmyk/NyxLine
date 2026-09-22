@@ -175,14 +175,15 @@ end
 
 -- Find matching game
 notify("Checks passed! Loading game script...")
-print("[NyxLine] Searching for game with PlaceId: " .. tostring(game.PlaceId))
+local currentPlaceId = game.PlaceId
+print("[NyxLine] Searching for game with PlaceId: " .. tostring(currentPlaceId) .. " (type: " .. typeof(currentPlaceId) .. ")")
 
 for gameName, gameData in pairs(gameConfig) do
     if typeof(gameData) == "table" then
-        -- Check if current PlaceId is in the game's PlaceId list
+        print("[NyxLine] Checking game: " .. gameName .. " | IDs: " .. HttpService:JSONEncode(gameData))
         local found = false
         for i, v in ipairs(gameData) do
-            if v == game.PlaceId then
+            if typeof(v) == "number" and tostring(v) == tostring(currentPlaceId) then
                 found = true
                 break
             end
