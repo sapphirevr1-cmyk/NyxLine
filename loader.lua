@@ -175,40 +175,35 @@ end
 
 -- Find matching game
 notify("Checks passed! Loading game script...")
-local currentPlaceId = game.PlaceId
-print("[NyxLine] Searching for game with PlaceId: " .. tostring(currentPlaceId) .. " (type: " .. typeof(currentPlaceId) .. ")")
+local currentPlaceId = tostring(game.PlaceId)
+print("[NyxLine] Searching for PlaceId: " .. currentPlaceId)
+print("[NyxLine] Raw config: " .. rawGameConfig)
+
+local foundGame = nil
+local foundUrl = nil
 
 for gameName, gameData in pairs(gameConfig) do
+    print("[NyxLine] Config key: " .. tostring(gameName) .. " type: " .. typeof(gameData))
     if typeof(gameData) == "table" then
-        print("[NyxLine] Checking game: " .. gameName .. " | IDs: " .. HttpService:JSONEncode(gameData))
-        local found = false
         for i, v in ipairs(gameData) do
-            if typeof(v) == "number" and tostring(v) == tostring(currentPlaceId) then
-                found = true
-                break
+            print("[NyxLine]   [" .. i .. "] = " .. tostring(v) .. " (type: " .. typeof(v) .. ")")
+            if tostring(v) == currentPlaceId then
+                foundGame = gameName
+                foundUrl = gameData[1]
             end
-        end
-
-        if found then
-            local scriptUrl = gameData[1]
-            if not scriptUrl or typeof(scriptUrl) ~= "string" then
-                notify("The game " .. gameName .. " is not yet supported!")
-                return
-            end
-
-            env.GameName = gameName
-            print("[NyxLine] Found game: " .. gameName)
-            notify("NyxLine loading: " .. gameName)
-
-            local gameScript = httpLoad(scriptUrl)
-            if not gameScript then
-                print("[NyxLine] Game script returned nil (may be normal if it doesn't return a value)")
-            end
-            print("[NyxLine] Done!")
-            return
         end
     end
 end
 
-notify("Failed to load:\nThe game is not supported!")
-print("[NyxLine] PlaceId " .. tostring(game.PlaceId) .. " not found in game config")
+if foundGame and foundUrl and typeof(foundUrl) == "string" then
+    env.GameName = foundGame
+    print("[NyxLine] Found game: " .. foundGame)
+    notify("NyxLine loading: " .. foundGame)
+    httpLoad(foundUrl)
+    print("[NyxLine] Done!")
+elseif foundGame then
+    notify("The game " .. foundGame .. " is not yet supported!")
+else
+    notify("Failed to load:\nThe game is not supported!")
+    print("[NyxLine] PlaceId " .. currentPlaceId .. " not found in game config")
+end
