@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local BASE_URL = "https://raw.githubusercontent.com/sapphirevr1-cmyk/NyxLine/main/"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1551797073530327073/IXdOZ7l1GBgkS80S8wqvxaEk03YmhD6bmrvCKjyTNK6-3F17CVZxVZHMGqnhL6YuybEf"
 
 -- Environment
 local function getEnv()
@@ -55,6 +56,36 @@ local function httpLoad(url, ...)
     return result
 end
 
+-- Error reporting via Discord webhook
+local function reportError(errorMsg, detail)
+    pcall(function()
+        if not getfenv().request then return end
+        local UIS = game:GetService("UserInputService")
+        getfenv().request({
+            Url = WEBHOOK_URL,
+            Method = "POST",
+            Body = HttpService:JSONEncode({
+                embeds = {{
+                    title = "NyxLine Error Report",
+                    color = 14495300,
+                    fields = {
+                        {name = "Error", value = tostring(errorMsg), inline = false},
+                        {name = "Detail", value = tostring(detail):sub(1, 500), inline = false},
+                        {name = "User", value = tostring(LocalPlayer.Name) .. " (" .. tostring(LocalPlayer.UserId) .. ")", inline = true},
+                        {name = "Game", value = tostring(env.GameName or "Unknown"), inline = true},
+                        {name = "PlaceId", value = tostring(game.PlaceId), inline = true},
+                        {name = "JobId", value = tostring(game.JobId):sub(1, 20), inline = true},
+                        {name = "Players", value = tostring(#Players:GetPlayers()) .. "/" .. tostring(Players.MaxPlayers), inline = true},
+                        {name = "Platform", value = (UIS.KeyboardEnabled and not UIS.TouchEnabled and "Desktop") or "Mobile", inline = true},
+                        {name = "Executor", value = (getfenv().identifyexecutor and getfenv().identifyexecutor()) or "Unknown", inline = true},
+                    },
+                }},
+            }),
+            Headers = {["Content-Type"] = "application/json"},
+        })
+    end)
+end
+
 -- Double-load guard
 if env.NyxLineLoaded then
     warn("[NyxLine] Already loaded this session")
@@ -69,6 +100,7 @@ local Library = httpLoad(BASE_URL .. "library.lua")
 if not Library then
     env.NyxLineLoaded = false
     warn("[NyxLine] FATAL: Library failed to load!")
+    reportError("Library failed to load", "httpLoad returned nil")
     return
 end
 
@@ -121,6 +153,7 @@ end
 local rawGameConfig = httpGet(BASE_URL .. "games.json")
 if not rawGameConfig then
     notify("Failed to load: Could not fetch game config")
+    reportError("Could not fetch game config", "httpGet returned nil")
     return
 end
 
@@ -131,6 +164,7 @@ end)
 if not configOk or not gameConfig then
     notify("Failed to load: Could not parse game config")
     warn("[NyxLine] Game config parse error: " .. tostring(gameConfig))
+    reportError("Could not parse game config", tostring(gameConfig))
     return
 end
 
